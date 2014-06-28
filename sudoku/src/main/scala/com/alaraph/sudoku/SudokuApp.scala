@@ -29,10 +29,10 @@ object SudokuApp {
     args.headOption match {
       case Some(str) =>
         val opt = str.takeWhile(_ != '=')
-        val arg = str.substring(opt.length)
-        val actions = Map("-s=" -> fromString _,
-          "-f=" -> fromFile _,
-          "-c=" -> fromConsole _) withDefaultValue ((_: String) => (Vector.empty))
+        val arg = str.substring(str.indexOf('=')+1)
+        val actions = Map("-s" -> fromString _,
+          "-f" -> fromFile _,
+          "-c" -> fromConsole _) withDefaultValue ((_: String) => (Vector.empty))
         actions(opt)(arg)
 
       case None =>
@@ -43,8 +43,9 @@ object SudokuApp {
   private def fromString(s: String) = {
     lazy val board = (for {
       (size, alpha) <- Sudoku.alphabet
+      ncells = size*size
       filteredInput = s.filter(c => (alpha + '-').contains(c))
-      if filteredInput.size == size
+      if filteredInput.size == ncells
     } yield (size, filteredInput)).toSeq
 
     board.headOption match {
@@ -105,9 +106,9 @@ object SudokuApp {
 
   private def solve(board: Vector[Vector[Char]]) = {
     val sudo = Sudoku.build(board, board.size)
-    println("Loaded Sudoku:\n %s".format(sudo))
+    println("Loaded Sudoku:\n%s".format(sudo))
     SudokuSolver solve sudo match {
-      case Some(s) => println(println("Solved Sudoku:\n %s".format(s)))
+      case Some(s) => println(println("Solved Sudoku:\n%s".format(s)))
       case None => println("No solution could be found")
     }
   }

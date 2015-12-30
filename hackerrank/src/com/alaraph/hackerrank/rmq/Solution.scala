@@ -74,19 +74,20 @@ object Solution {
 
   object SegmentTree {
     def build(data: Vector[Int]): SegmentTree = {
-      def buildAcc(l: Int, r: Int, data: Vector[Int]): SegmentTree =
+      def buildAcc(l: Int, r: Int): SegmentTree =
         if (l == r)
           new Leaf(l, data(l))
         else {
           val n = (l + r) / 2
-          val left = buildAcc(l, n, data)
-          val right = buildAcc(n + 1, r, data)
+          val left = buildAcc(l, n)
+          val right = buildAcc(n + 1, r)
           new Node((l, r), math.min(left.min, right.min), left, right)
         }
-      buildAcc(0, data.length - 1, data)
+      buildAcc(0, data.length - 1)
     }
   }
  
+  import scala.io.StdIn.readLine
   def readInts: Vector[Int] = readLine.split(' ').map(_.toInt).toVector
 
   def main(args: Array[String]): Unit = {

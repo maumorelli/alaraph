@@ -20,7 +20,7 @@
  */
 
 
-package com.alaraph.hackerrank.stockpred
+package com.alaraph.hackerrank.stockpred5
 
 /**
  * @author mauromorelli
@@ -87,7 +87,7 @@ object Solution {
                           else None
                         (rL, rR)
                       }
-
+            
             rng match {
               case (None, Some(y)) => rg + y
               case (Some(x), None) => rg + x
@@ -186,6 +186,10 @@ object Solution {
      require(queries.forall { _.length == 2 })
      val s = SegmentTree.build(a, fun, intToValue)
      val res = queries.map { case Vector(ix, m) => s.maxsub(ix, g(a(ix), m))}
-     res map { case Some(r) => println(r.len)} 
+     res foreach { x => x match {
+                          case Some(r) => println(r.len)
+                          case None => 
+                        } 
+                 }
   }
 }

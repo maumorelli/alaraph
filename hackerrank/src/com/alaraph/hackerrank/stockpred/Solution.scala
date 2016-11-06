@@ -20,7 +20,7 @@
  */
 
 
-package com.alaraph.hackerrank.stockpred5
+package com.alaraph.hackerrank.stockpred
 
 /**
  * @author mauromorelli

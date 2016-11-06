@@ -48,6 +48,10 @@ object Solution {
     def >(rg: Range):Boolean =
       if (this != rg && (this >= rg)) true else false
 
+    def <(rg: Range) = rg > this
+    
+    def <=(rg: Range) = rg >= this
+    
     def len = r - l + 1
 
     override def toString: String = "(%d, %d)".format(l, r)

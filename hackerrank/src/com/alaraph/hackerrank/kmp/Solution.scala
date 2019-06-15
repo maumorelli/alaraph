@@ -31,12 +31,12 @@ object Solution {
     
     def next:Vector[Int] = {
       def _next(i: Int, j:Int, acc: Vector[Int]):Vector[Int] = {
-       def nextJ(j: Int):Int =
-         if (j >= 0 && path(i) != path(j)) nextJ(acc(j))
-         else j
+        def nextJ(j: Int):Int =
+          if (j >= 0 && path(i) != path(j)) nextJ(acc(j))
+          else j
         
-  		   if (i < pathlen) _next(i+1, nextJ(j) + 1, acc :+ j)
-  		   else acc
+  		  if (i < pathlen) _next(i+1, nextJ(j) + 1, acc :+ j)
+  		  else acc
       }
       _next(0, -1, Vector.empty)
     }

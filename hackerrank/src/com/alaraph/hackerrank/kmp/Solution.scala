@@ -35,7 +35,7 @@ object Solution {
           if (j >= 0 && path(i) != path(j)) nextJ(acc(j))
           else j
         
-  		  if (i < pathlen) _next(i+1, nextJ(j) + 1, acc :+ j)
+  		  if (i < pathlen) _next(i + 1, nextJ(j) + 1, acc :+ j)
   		  else acc
       }
       _next(0, -1, Vector.empty)
@@ -49,7 +49,7 @@ object Solution {
          else j
       
        if (j == pathlen) "YES"
-       else if (i < textlen) _kmp(i+1, nextJ(j) + 1)
+       else if (i < textlen) _kmp(i + 1, nextJ(j) + 1)
        else "NO"
     }   
     _kmp(0,0)   

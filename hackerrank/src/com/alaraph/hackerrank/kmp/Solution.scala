@@ -23,45 +23,34 @@
 object Solution {
   import scala.io.StdIn.readLine
   
-  def kmp(p:String, t:String): String = {
-    val text = t.toVector
-    val path = p.toVector
-    val pathlen = path.length
-    val textlen = text.length
+  def next(j:Int, c:Char, pat:Vector[Char], offset:Vector[Int]):Int = 
+    if (j >= 0 && c != pat(j)) next(offset(j), c, pat, offset) else j
     
-    def next:Vector[Int] = {
-      def _next(i: Int, j:Int, acc: Vector[Int]):Vector[Int] = {
-        def nextJ(j: Int):Int =
-          if (j >= 0 && path(i) != path(j)) nextJ(acc(j))
-          else j
-        
-  		  if (i < pathlen) _next(i + 1, nextJ(j) + 1, acc :+ j)
-  		  else acc
-      }
-      _next(0, -1, Vector.empty)
-    }
-    
-    val nextpos = next
-    
-    def _kmp(i:Int, j:Int): String = {
-       def nextJ(j: Int):Int =
-         if (j >= 0 && text(i) != path(j)) nextJ(nextpos(j))
-         else j
+  def offsets(pat:Vector[Char]):Vector[Int] = {
+      def _offsets(i: Int, j:Int, acc: Vector[Int]):Vector[Int] =    
+              if (i < pat.length) _offsets(i + 1, next(j, pat(i), pat, acc) + 1, acc :+ j)
+              else acc
       
-       if (j == pathlen) "YES"
-       else if (i < textlen) _kmp(i + 1, nextJ(j) + 1)
+      _offsets(0, -1, Vector.empty)
+  }
+  
+  def kmp(path:String, text:String): String = {
+    val t = text.toVector
+    val p = path.toVector
+    val offs = offsets(p)
+    
+    def _kmp(i:Int, j:Int): String = 
+       if (j == p.length) "YES"
+       else if (i < t.length) _kmp(i+1, next(j, t(i), p, offs) + 1)
        else "NO"
-    }   
+      
     _kmp(0,0)   
   }
 
-  def main(args: Array[String]): Unit = {
-    val n = readLine.toInt
-    
-    for (i <- 0 until n) {
+  def main(args: Array[String]): Unit = 
+    for (i <- 0 until readLine.toInt) {
       val txt = readLine()
       val pat = readLine()
       println(kmp(pat, txt))
     }
-  }
 }

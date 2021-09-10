@@ -1,5 +1,5 @@
 /**
- *   Copyright 2014 www.alaraph.com
+ *   Copyright 2021 www.alaraph.com
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /*
- * This is my solution to problem: https://www.hackerrank.com/challenges/brainf_k-interpreter-fp
+ * This is my solution to problem: https://www.hackerrank.com/challenges/klotski/problem
  * mauro@alaraph.com
  */
 

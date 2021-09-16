@@ -44,16 +44,13 @@ object Solution {
     val bR = Cell(maxY, maxX)
     val width = maxX - minX + 1
     val height = maxY - minY + 1
-
-    override def hashCode =
-      (symbol + (scala.collection.immutable.SortedSet[(Int,Int)]() ++ cells.map (c => (c.y, c.x))).toString).hashCode
   }
 
   case class Move(block: String, from: Cell, to: Cell) {
     def offset = Offset(to.y - from.y, to.x - from.x)
   }
 
-  case class Board(blocks: Map[String, Block], maxX: Int, maxY: Int) {
+  case class Board(blocks: Map[String, Block], block:String, maxX: Int, maxY: Int) {
     val minX = 0
     val minY = 0
     val symbols = blocks.keys
@@ -69,14 +66,13 @@ object Solution {
           val overlap = otherBlocks.values.find(_.cells.intersect(cells) != Set.empty)
           overlap match {
             case Some(_) => None
-            case None => Some(Board(blocks + (s -> Block(s, cells)), maxX, maxY))
+            case None => Some(Board(blocks + (s -> Block(s, cells)), block, maxX, maxY))
           }
       }
     }
-    override def hashCode = {
-      val ccat: (String, String) => String = (x, y) => x.concat(" ".concat(y))
-      blocks.values.map (b => b.hashCode).toList.sorted.map(x => x.toString).foldLeft("")(ccat).hashCode
-    }
+
+    override def hashCode = (blocks(block).hashCode :: (blocks - block).values.map (b => b.cells.hashCode).toList.sorted).hashCode
+
     override def toString = {
       val block = "." * blocks.keys.head.size
       val board = Array.fill(maxY+1, maxX+1)(block)
@@ -84,10 +80,11 @@ object Solution {
       val ccat: (String, String) => String = (x, y) => x.concat(" ".concat(y))
       " " + board.toList.map(x => x.toList).map(y => y.foldRight("\n")(ccat)).foldRight("")(ccat) + "\n"
     }
+
   }
 
   object Board {
-    def build(b: Vector[Vector[String]]) = {
+    def build(b: Vector[Vector[String]], block:String) = {
       val maxY = b.size - 1
       val maxX = b(0).size - 1
       val eb = "." * b(0)(0).length //empty block
@@ -98,7 +95,7 @@ object Solution {
 
       Board(flatb.groupBy(_._1).map {
         case (y, zz) => (y, Block(y, zz.map(_._2).toSet))
-      }, maxX, maxY)
+      }, block, maxX, maxY)
     }
   }
 
@@ -106,7 +103,8 @@ object Solution {
     board.blocks(symbol).uL == target
 
   type Path = List[Move]
-  val hist = scala.collection.mutable.SortedSet[Int]()
+  val hist = scala.collection.mutable.Set[Int]()
+
 
   def solve(brd:Board, block:String, target:Cell, maxmoves: Int = 250):Path = {
     val symbols = (brd.symbols.toSet - block).toList
@@ -120,50 +118,58 @@ object Solution {
       case t :: tx => if (isSolved(block, target, t.board)) (trails, t.path)
       else {
         val _trails = moveBlockAroundOnce(t, block, offsets)
-        pursueTarget(tx ++ _trails, acc ++ _trails)
+        val newTrails = sanitize(_trails)
+        pursueTarget(tx ++ newTrails, acc ++ newTrails)
       }
       case Nil => (acc, Nil)
     }
 
-    def moveBlockAroundOnce(trail: Trail, s: String, offsets: Offsets, acc: Trails = Nil): Trails = offsets match {
+    def moveBlockAroundOnce(trail: Trail, s: String, offsets: Offsets, hist: Set[Board]=Set.empty, acc: Trails = Nil): Trails = offsets match {
       case o :: ox => trail.board.perform(s, o) match {
-        case Some(newBoard) => val hashcd = newBoard.hashCode
-                               if (hist.contains(hashcd))
-                                  moveBlockAroundOnce(trail, s, ox, acc)
-                               else {
-                                 hist.add(hashcd)
-                                 moveBlockAroundOnce(trail, s, ox, Trail(newBoard,
-                                 Move(s, trail.board.blocks(s).uL, newBoard.blocks(s).uL) :: trail.path)::acc)
-                               }
-        case None => moveBlockAroundOnce(trail, s, ox, acc)
+        case Some(newBoard) => if (hist.contains(newBoard))
+            moveBlockAroundOnce(trail, s, ox, hist, acc)
+          else
+            moveBlockAroundOnce(trail, s, ox, hist+newBoard, Trail(newBoard,
+              Move(s, trail.board.blocks(s).uL, newBoard.blocks(s).uL) :: trail.path)::acc)
+
+        case None => moveBlockAroundOnce(trail, s, ox, hist, acc)
       }
       case Nil => acc
     }
 
-    def moveBlockAround(trails: Trails, s: String, acc: Trails = Nil): Trails = trails match {
-      case t :: tx => val _trails = moveBlockAroundOnce(t, s, offsets)
-        moveBlockAround(tx ++ _trails, s, acc ++ _trails)
+    def moveBlockAround(trails: Trails, s: String, hist: Set[Board]=Set.empty, acc: Trails = Nil): Trails = trails match {
+      case t :: tx => val _trails = moveBlockAroundOnce(t, s, offsets, hist + t.board)
+        moveBlockAround(tx ++ _trails, s, hist.union(_trails.map(t=>t.board).toSet), acc ++ _trails)
       case Nil => acc
     }
 
+    def sanitize(trails:Trails, acc: Trails = Nil): Trails = trails match {
+      case t::tx => val hashcd = t.board.hashCode
+        if (hist.contains(hashcd)) sanitize(tx, acc)
+      else {
+        hist.add(hashcd)
+        sanitize(tx, t::acc)
+      }
+      case Nil => acc
+    }
     def checkOneTrail(trail: Trail, symbols: List[String], acc: Trails = Nil): Trails = symbols match {
-            case s :: sx => val _trails = moveBlockAround(List(trail), s)
-                            checkOneTrail(trail, sx, acc ++ _trails)
-            case Nil => acc
-      }
+      case s :: sx => val _trails = moveBlockAround(List(trail), s)
+        val newTrails = sanitize(_trails)
+        checkOneTrail(trail, sx, acc ++ newTrails)
+      case Nil => acc
+    }
 
     def _solve(trails: Trails): Path = trails match {
-        case t :: tx => //println("Path.size=" + prepare(t.path).size + ", Hist.size=" + hist.size + ", Trails.size=" + trails.size)
-                        val (_trails, _path) = if (t.path == Nil || t.path.head.block != block) pursueTarget(List(t))
-                                               else (Nil, Nil)
-                        if (_path != Nil) _path
-                        else {
-                          val _symbols = if (t.path == Nil) symbols
-                                         else (symbols.toSet - t.path.head.block).toList
-                          val newTrails = checkOneTrail(t, _symbols)
-                          _solve(tx ++ newTrails ++ _trails)
-                        }
-        case Nil => Nil
+      case t :: tx => val (_trails, _path) =  if (t.path == Nil || t.path.head.block != block) pursueTarget(List(t))
+      else (Nil, Nil)
+        if (_path != Nil) _path
+        else {
+          val _symbols =  if (t.path == Nil) symbols
+          else (symbols.toSet - t.path.head.block).toList
+          val newTrails = checkOneTrail(t, _symbols)
+          _solve(tx ++ newTrails ++ _trails)
+        }
+      case Nil => Nil
     }
 
 
@@ -186,9 +192,20 @@ object Solution {
     val puzzle = (for (i <- 1 to m) yield readLine.split(' ').toVector).toVector
     val block = readLine
     val target = readLine.split(' ').map(_.toInt)
-    val res = solve(Board.build(puzzle), block, Cell(target(0),target(1)))
+    val res = solve(Board.build(puzzle, block), block, Cell(target(0),target(1)))
     val path = prepare(res).reverse
     println(path.length)
     path.foreach(m => printf("%s %s %s\n", m.block, m.from, m.to))
   }
 }
+
+
+
+
+
+
+
+
+
+
+
